@@ -1,5 +1,5 @@
-# Jorge - Deletar conta
-Site usado no app puerino, do jorge, para um usuário solicitar a remoção de seus dados.
+# Wakka - Deletar conta
+Site usado no app Wakka, para um usuário solicitar a remoção de seus dados.
 
 ## Como faço uma página igual para meu app?
 
