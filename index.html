@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solicitação de Exclusão de Conta - Puerino</title>
+  <title>Exclusão de Conta - Wakka</title>
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
     * {
@@ -48,15 +48,6 @@
       color: #444;
     }
 
-    ul {
-      margin-top: 0.5rem;
-      padding-left: 1.5rem;
-    }
-
-    li {
-      margin-bottom: 0.5rem;
-    }
-
     a {
       color: #007bff;
       text-decoration: none;
@@ -64,22 +55,6 @@
 
     a:hover {
       text-decoration: underline;
-    }
-
-    .button {
-      display: inline-block;
-      margin-top: 2rem;
-      padding: 0.75rem 1.5rem;
-      background-color: #dc3545;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-      font-weight: bold;
-      transition: background-color 0.2s;
-    }
-
-    .button:hover {
-      background-color: #c82333;
     }
 
     @media (max-width: 600px) {
@@ -92,48 +67,84 @@
       }
     }
 
-    .toast {
-      visibility: hidden;
-      min-width: 250px;
-      margin-left: -125px;
-      background-color: #333;
-      color: #fff;
-      text-align: center;
-      border-radius: 4px;
-      padding: 1rem;
-      position: fixed;
-      z-index: 1000;
-      left: 50%;
-      bottom: 30px;
-      font-size: 1rem;
-      opacity: 0;
-      transition: opacity 0.3s ease, bottom 0.3s ease;
+    .login-form {
+      margin-top: 1rem;
+      max-width: 420px;
     }
 
-    .toast.show {
-      visibility: visible;
-      opacity: 1;
-      bottom: 50px;
+    .login-form label {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .login-form input {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    .login-form button {
+      padding: 0.75rem 1.25rem;
+      background-color: #dc3545;
+      color: #fff;
+      border: 0;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .login-form button:hover:not(:disabled) {
+      background-color: #c82333;
+    }
+
+    .login-form button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+
+    .status.error {
+      color: #c82333;
+    }
+
+    .status.success {
+      color: #198754;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Solicitação de Exclusão de Conta</h1>
+    <h1>Exclusão de Conta - Wakka</h1>
 
     <section>
-      <p>Se você deseja excluir sua conta e os dados associados ao aplicativo <strong>Puerino</strong>, siga as instruções abaixo.</p>
+      <p>Se você deseja excluir sua conta e os dados associados ao aplicativo <strong>Wakka</strong>, faça login abaixo. Após a autenticação, sua conta será removida.</p>
     </section>
 
     <section>
-      <h2>Como solicitar a exclusão</h2>
-      <p>Envie um e-mail para <a href="mailto:contato@puerino.com.br">contato@puerino.com.br</a> com o assunto <strong>"Excluir minha conta - Puerino"</strong>.</p>
-      <p>Inclua no e-mail:</p>
-      <ul>
-        <li>Seu nome completo</li>
-        <li>Endereço de e-mail usado na conta</li>
-        <li>Motivo da solicitação (opcional)</li>
-      </ul>
+      <h2>Faça login para excluir sua conta</h2>
+      <p>Informe o e-mail e a senha da conta que deseja excluir.</p>
+
+      <form id="deleteAccountForm" class="login-form" novalidate>
+        <label for="email">E-mail</label>
+        <input id="email" type="email" autocomplete="username" required />
+
+        <label for="password">Senha</label>
+        <input id="password" type="password" autocomplete="current-password" required />
+
+        <button id="deleteBtn" type="submit">Fazer login e deletar conta</button>
+      </form>
+
+      <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
     </section>
 
     <section>
@@ -149,36 +160,75 @@
 
     <section>
       <h2>Dúvidas?</h2>
-      <p>Entre em contato com nosso suporte pelo e-mail acima ou visite nossa <a href="https://jorge-back.puerino.com/politicas/" target="_blank">Política de Privacidade</a>.</p>
+      <p>Entre em contato pelo e-mail <a href="mailto:contato@wakkaapp.com">contato@wakkaapp.com</a> ou visite <a href="https://wakkaapp.com" target="_blank">wakkaapp.com</a>.</p>
     </section>
-
-    <a id="copyEmailBtn" class="button" href="#">Solicitar exclusão por e-mail</a>
   </div>
 
-  <div id="toast" class="toast">E-mail copiado para a área de transferência!</div>
-
   <script>
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.classList.add('show');
+    const LOGIN_URL = 'https://nivia.polijrinternal.com/auth/login';
+    const DELETE_BASE_URL = 'https://nivia.polijrinternal.com/users/delete';
 
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
+    function setStatus(message, isError) {
+      const statusElement = document.getElementById('statusMessage');
+      statusElement.textContent = message;
+      statusElement.className = isError ? 'status error' : 'status success';
     }
 
-    document.getElementById('copyEmailBtn').addEventListener('click', function (e) {
+    document.getElementById('deleteAccountForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const email = 'contato@puerino.com.br';
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const deleteButton = document.getElementById('deleteBtn');
 
-      navigator.clipboard.writeText(email).then(() => {
-        showToast('E-mail copiado para a área de transferência!');
-        window.location.href = `mailto:${email}?subject=Excluir minha conta - Puerino`;
-      }).catch(err => {
-        alert('Não foi possível copiar o e-mail automaticamente. Por favor, copie manualmente.');
-        window.location.href = `mailto:${email}?subject=Excluir minha conta - Puerino`;
-      });
+      setStatus('Processando solicitação...', false);
+      deleteButton.disabled = true;
+
+      try {
+        const loginResponse = await fetch(LOGIN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password
+          })
+        });
+
+        const loginData = await loginResponse.json().catch(() => null);
+        if (!loginResponse.ok) {
+          const message = loginData && loginData.message ? loginData.message : 'Não foi possível autenticar o usuário.';
+          throw new Error(message);
+        }
+
+        const userId = loginData && loginData.entity ? loginData.entity.id : null;
+        const accessToken = loginData ? loginData.accessToken : null;
+
+        if (!userId) {
+          throw new Error('A resposta de login não contém o ID do usuário.');
+        }
+
+        const deleteResponse = await fetch(`${DELETE_BASE_URL}/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/json',
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+          }
+        });
+
+        const deleteData = await deleteResponse.json().catch(() => null);
+        if (!deleteResponse.ok) {
+          const message = deleteData && deleteData.message ? deleteData.message : 'Erro ao excluir conta.';
+          throw new Error(message);
+        }
+
+        setStatus('Conta excluída com sucesso.', false);
+      } catch (error) {
+        setStatus(error.message || 'Falha inesperada ao tentar excluir a conta.', true);
+      } finally {
+        deleteButton.disabled = false;
+      }
     });
   </script>
 
